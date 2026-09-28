@@ -1,0 +1,9 @@
+## Interface: 30300
+## Title: SpellRankFix
+## Notes: Upgrades stale action bar spell ranks after dual spec switch / level up
+## Author: SpellRankFix
+## Version: 1.0
+## X-Category: Action Bars
+## SavedVariables: SpellRankFixDB
+
+SpellRankFix.lua
