@@ -96,42 +96,35 @@ local function GetActionSpell(slot)
 	return name, rank
 end
 
-local queue = {}
+local dirty = false
+local specSwitchAt = 0
 local ticker = CreateFrame("Frame")
 ticker:Hide()
 ticker:SetScript("OnUpdate", function(self)
-	local now = GetTime()
-	local due = false
-	for i = #queue, 1, -1 do
-		if now >= queue[i] then
-			queue[i] = queue[#queue]
-			queue[#queue] = nil
-			due = true
-		end
-	end
-	if #queue == 0 then
-		self:Hide()
-	end
-	if due then
-		frame.Scan()
-	end
+	self:Hide()
+	dirty = false
+	frame.Scan()
 end)
 
-local function Schedule(delay)
-	queue[#queue + 1] = GetTime() + (delay or 0)
-	ticker:Show()
+local function RequestScan()
+	if not dirty then
+		dirty = true
+		ticker:Show()
+	end
 end
 
 function frame.Scan(force)
 	if scanning or not excludes or (not enabled and not force) then
 		return nil
 	end
-	if GetCursorInfo() or (InCombatLockdown and InCombatLockdown()) then
-		if force then
-			return nil
+	if GetCursorInfo() then
+		return nil
+	end
+	if InCombatLockdown and InCombatLockdown() then
+		if not force then
+			RequestScan()
 		end
-		Schedule(2)
-		return 0
+		return nil
 	end
 	scanning = true
 	BuildBestSpells()
@@ -157,18 +150,14 @@ function frame.Scan(force)
 		end
 	end
 	scanning = false
-	if fixed > 0 then
-		Schedule(3)
-	end
 	return fixed
 end
 
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("PLAYER_LEVEL_UP")
-frame:RegisterEvent("SPELLS_CHANGED")
-frame:RegisterEvent("PLAYER_TALENT_UPDATE")
 frame:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
+frame:RegisterEvent("ACTIONBAR_SLOT_CHANGED")
 frame:SetScript("OnEvent", function(self, event, arg1)
 	if event == "ADDON_LOADED" then
 		if arg1 ~= ADDON then
@@ -248,14 +237,20 @@ frame:SetScript("OnEvent", function(self, event, arg1)
 		end
 		return
 	end
+	if scanning then
+		return
+	end
 	if event == "ACTIVE_TALENT_GROUP_CHANGED" then
-		Schedule(0)
-		Schedule(1)
-	elseif event == "PLAYER_LEVEL_UP" or event == "PLAYER_TALENT_UPDATE" then
-		Schedule(1)
-	elseif event == "SPELLS_CHANGED" then
-		Schedule(0.5)
+		specSwitchAt = GetTime()
+		RequestScan()
+	elseif event == "ACTIONBAR_SLOT_CHANGED" then
+		if GetTime() - specSwitchAt < 2 then
+			RequestScan()
+		end
+	elseif event == "PLAYER_LEVEL_UP" then
+		RequestScan()
 	elseif event == "PLAYER_ENTERING_WORLD" then
-		Schedule(2)
+		specSwitchAt = GetTime()
+		RequestScan()
 	end
 end)

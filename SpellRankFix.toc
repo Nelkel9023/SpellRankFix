@@ -2,7 +2,7 @@
 ## Title: SpellRankFix
 ## Notes: Upgrades stale action bar spell ranks after dual spec switch / level up
 ## Author: SpellRankFix
-## Version: 1.0
+## Version: 1.1
 ## X-Category: Action Bars
 ## SavedVariables: SpellRankFixDB
 

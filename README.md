@@ -17,15 +17,19 @@ Macros are never touched - only real spell actions are checked.
 
 ## What triggers a fix
 
-- Dual spec switch (checked immediately, then again 1 second later)
-- Level up
-- Spellbook changed (learning/ranking up a spell)
-- Talent update
-- Login / loading screen (2 seconds after)
-- A verification pass 3 seconds after any fix
+Everything is event-driven - there is **no polling or repeated background scanning**.
+One scan runs (on the next frame) when one of these happens:
 
-The scan skips itself if you are holding something on your cursor or are in combat,
-and retries a bit later instead.
+- Dual spec switch - also listens to bar restore events for 2 seconds afterwards,
+  so it catches the bars even if they finish loading slightly later
+- Loading into the world (login / loading screen)
+- Level up
+- You run `/rankfix`
+
+That is all. Between events the addon does nothing at all.
+
+The scan skips itself if you are holding something on your cursor (you get no
+automatic retry, run `/rankfix` if needed) and retries next frame if you are in combat.
 
 ## Install
 
